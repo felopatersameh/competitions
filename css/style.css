@@ -88,10 +88,11 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height on mobile browsers */
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 1.25rem 2rem;
+  padding: max(1rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
   position: relative;
 }
 
@@ -1360,6 +1361,7 @@ body {
   border: none;
   outline: none;
   user-select: none;
+  font-family: var(--font-heading);
   transition: all var(--transition-fast);
 }
 
@@ -1515,31 +1517,735 @@ body {
   50% { transform: translateY(-8px); }
 }
 
-/* Responsive adjustments */
+/* ==========================================================================
+   Missing Classes & Accessibility
+   ========================================================================== */
+
+/* Decorative glow elements (visual only, animated via pseudo or background) */
+.btn-spin-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.1) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Icon wrappers inside pill and badge elements */
+.pill-icon,
+.badge-icon {
+  font-size: 1.2em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Helper button label text */
+.helper-label {
+  flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Danger outline button (used in finished card) */
+.btn-outline-danger {
+  background: transparent;
+  color: #fda4af;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: 0.8rem 1.6rem;
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  transition: all var(--transition-fast);
+}
+
+.btn-outline-danger:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: #f43f5e;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Focus Styles (Keyboard Accessibility)
+   ========================================================================== */
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.btn-helper:focus-visible,
+.btn-timer:focus-visible,
+.btn-spin:focus-visible,
+.btn-open:focus-visible,
+.btn-cancel-spin:focus-visible,
+.btn-finish:focus-visible,
+.btn-reveal:focus-visible,
+.btn-skip:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-success:focus-visible,
+.btn-danger:focus-visible,
+.btn-danger-full:focus-visible,
+.btn-outline-danger:focus-visible,
+.btn-toggle:focus-visible,
+.modal-close-icon:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+/* ==========================================================================
+   Responsive — Tablet (max 900px)
+   ========================================================================== */
 @media (max-width: 900px) {
   .app-container {
     padding: 0.75rem 1rem;
   }
 
-  .choices-grid {
-    grid-template-columns: 1fr;
+  /* Header */
+  .app-header {
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
   }
 
+  .game-title {
+    font-size: 1.2rem;
+  }
+
+  .game-title span {
+    display: none; /* hide subtitle on tablet */
+  }
+
+  .header-stats {
+    gap: 0.5rem;
+  }
+
+  .stat-badge {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  /* Wheel */
+  .wheel-canvas-container {
+    width: 380px;
+    height: 380px;
+  }
+
+  .wheel-view-layout {
+    gap: 1.25rem;
+    min-height: calc(100vh - 140px);
+  }
+
+  /* Timer */
+  .timer-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .timer-digits {
+    font-size: 2.2rem;
+  }
+
+  /* Helpers */
   .helpers-toolbar {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Choices */
+  .choices-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Shortcuts */
+  .shortcuts-table {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Responsive — Mobile (max 600px)
+   ========================================================================== */
+@media (max-width: 600px) {
+  .app-container {
+    padding: 0.5rem 0.6rem;
+  }
+
+  /* ── Header ── */
+  .app-header {
+    flex-wrap: wrap;
+    padding: 0.6rem 0.85rem;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+  }
+
+  .header-branding {
+    gap: 0.5rem;
+    flex: 1 1 auto;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.4rem;
+  }
+
+  .game-title {
+    font-size: 1.05rem;
+  }
+
+  .game-title span {
+    display: none;
+  }
+
+  .header-stats {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .stat-badge {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.88rem;
+    border-radius: var(--radius-full);
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .header-controls {
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Wheel View ── */
+  .wheel-view-layout {
+    gap: 1rem;
+    padding: 0.25rem 0;
+    min-height: unset;
+  }
+
+  .wheel-wrapper {
+    margin-top: 0.25rem;
+  }
+
   .wheel-canvas-container {
-    width: 380px;
-    height: 380px;
+    width: min(85vw, 320px);
+    height: min(85vw, 320px);
+    box-shadow:
+      0 0 0 5px rgba(255,255,255,0.05),
+      0 0 0 9px rgba(56,189,248,0.15),
+      0 12px 30px rgba(0,0,0,0.7),
+      0 0 25px rgba(56,189,248,0.2);
+  }
+
+  .wheel-pointer {
+    top: -18px;
+    width: 34px;
+    height: 42px;
+  }
+
+  .wheel-center-cap {
+    width: 56px;
+    height: 56px;
+  }
+
+  .center-gem {
+    width: 24px;
+    height: 24px;
+  }
+
+  .wheel-actions-pane {
+    min-height: unset;
+    padding: 0 0.5rem;
+    width: 100%;
+  }
+
+  /* Spin button */
+  .btn-spin {
+    padding: 0.85rem 2rem;
+    font-size: 1.25rem;
+  }
+
+  .spin-icon {
+    font-size: 1.4rem;
+  }
+
+  /* Selected Card */
+  .selected-card {
+    padding: 1rem 1.2rem;
+    gap: 0.85rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .selected-meta {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .category-pill {
+    font-size: 1.1rem;
+    padding: 0.45rem 1rem;
+  }
+
+  .points-pill {
+    padding: 0.45rem 1rem;
+  }
+
+  .points-pill span:first-child {
+    font-size: 1.3rem;
+  }
+
+  .selected-actions {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .btn-open,
+  .btn-cancel-spin {
+    width: 100%;
+    justify-content: center;
+    padding: 0.85rem 1rem;
+    font-size: 1.1rem;
+  }
+
+  /* Finished card */
+  .finished-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .finished-title {
+    font-size: 1.5rem;
+  }
+
+  .finished-subtitle {
+    font-size: 1rem;
+  }
+
+  .finished-actions {
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+  }
+
+  .finished-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ── Question View ── */
+  .question-container {
+    padding: 0.5rem 0 1rem;
+    gap: 0.85rem;
+  }
+
+  .question-header {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .question-category-badge {
+    font-size: 1rem;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .question-points-badge {
+    padding: 0.45rem 0.9rem;
+  }
+
+  .question-points-badge span:first-child {
+    font-size: 1.2rem;
+  }
+
+  .question-box {
+    padding: 1.25rem 1.2rem;
+    min-height: 100px;
+    border-radius: var(--radius-lg);
+  }
+
+  .question-text {
+    font-size: clamp(1.25rem, 5vw, 1.7rem);
+    line-height: 1.5;
+  }
+
+  /* ── Timer ── */
+  .timer-section {
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+  }
+
+  .timer-display-wrapper {
+    gap: 0.75rem;
+  }
+
+  .timer-digits {
+    font-size: 2rem;
+    min-width: 100px;
+  }
+
+  .timer-progress-track {
+    height: 10px;
+  }
+
+  .btn-timer {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    border-radius: var(--radius-md);
+  }
+
+  .key-hint {
+    display: none; /* hide keyboard hint on mobile */
+  }
+
+  /* ── Hint Box ── */
+  .hint-box {
+    padding: 1rem 1.1rem;
+  }
+
+  .hint-content {
+    font-size: 1.1rem;
+  }
+
+  /* ── Choices ── */
+  .choices-grid {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .choice-card {
+    padding: 0.85rem 1rem;
+    gap: 0.85rem;
+  }
+
+  .choice-letter {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .choice-text {
+    font-size: 1.1rem;
+  }
+
+  /* ── Helpers Toolbar ── */
+  .helpers-toolbar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .btn-helper {
+    padding: 0.7rem 0.5rem;
+    font-size: 0.9rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: center;
+    min-height: 64px;
+  }
+
+  .helper-icon {
+    font-size: 1.4rem;
+  }
+
+  .helper-label {
+    font-size: 0.8rem;
+  }
+
+  .helper-key {
+    display: none; /* hide keyboard shortcut badge on mobile */
+  }
+
+  /* ── Finish Button ── */
+  .question-footer {
+    margin-top: 0.25rem;
+  }
+
+  .btn-finish {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.05rem;
+    width: 100%;
+    border-radius: var(--radius-lg);
+  }
+
+  /* ── Modals ── */
+  .modal-overlay {
+    padding: 0.85rem;
+    align-items: flex-end; /* slide up from bottom on mobile */
+  }
+
+  .modal-card {
+    max-width: 100%;
+    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-md) var(--radius-md);
+    padding: 1.5rem 1.25rem;
+    gap: 1rem;
+  }
+
+  .modal-icon-header {
+    width: 56px;
+    height: 56px;
+    font-size: 2rem;
+  }
+
+  .modal-title {
+    font-size: 1.35rem;
+  }
+
+  .modal-desc {
+    font-size: 1rem;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.85rem 1rem;
+    font-size: 1.05rem;
+  }
+
+  .modal-history,
+  .modal-settings {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .history-content {
+    max-height: 45vh;
+  }
+
+  .history-item {
+    font-size: 0.95rem;
+    padding: 0.65rem 0.9rem;
+    flex-wrap: wrap;
+    gap: 0.35rem;
   }
 
   .shortcuts-table {
     grid-template-columns: 1fr;
   }
 
-  .timer-section {
-    flex-direction: column;
-    align-items: stretch;
+  .shortcut-row {
+    font-size: 0.85rem;
+  }
+
+  /* Answer Modal */
+  .modal-answer {
+    max-width: 100%;
+  }
+
+  .answer-text {
+    font-size: 1.45rem;
+  }
+
+  .btn-reveal {
+    font-size: 1.1rem;
+    padding: 0.9rem;
+  }
+
+  .btn-skip {
+    font-size: 1rem;
+    padding: 0.9rem;
+  }
+
+  /* Return to wheel btn */
+  .btn-large {
+    padding: 0.9rem 1.5rem;
+    font-size: 1.1rem;
   }
 }
+
+/* ==========================================================================
+   Responsive — Very Small Mobile (max 380px — small Android phones)
+   ========================================================================== */
+@media (max-width: 380px) {
+  .app-header {
+    padding: 0.5rem 0.65rem;
+  }
+
+  .game-title {
+    font-size: 0.95rem;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .wheel-canvas-container {
+    width: min(80vw, 280px);
+    height: min(80vw, 280px);
+  }
+
+  .btn-spin {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+  }
+
+  .timer-digits {
+    font-size: 1.75rem;
+    min-width: 85px;
+  }
+
+  .question-text {
+    font-size: clamp(1.1rem, 4.5vw, 1.4rem);
+  }
+
+  .helpers-toolbar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+  }
+
+  .btn-helper {
+    min-height: 56px;
+    padding: 0.6rem 0.4rem;
+  }
+
+  .helper-icon {
+    font-size: 1.2rem;
+  }
+
+  .helper-label {
+    font-size: 0.75rem;
+  }
+
+  .choice-text {
+    font-size: 1rem;
+  }
+
+/* ==========================================================================
+   Responsive — Mobile Landscape (phones held horizontally)
+   ========================================================================== */
+@media (max-height: 520px) and (orientation: landscape) {
+  .app-container {
+    padding: 0.4rem 0.75rem;
+  }
+
+  .app-header {
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .game-title {
+    font-size: 1rem;
+  }
+
+  .wheel-view-layout {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    min-height: unset;
+    gap: 1.5rem;
+  }
+
+  .wheel-canvas-container {
+    width: min(60vh, 240px);
+    height: min(60vh, 240px);
+  }
+
+  .wheel-actions-pane {
+    max-width: 320px;
+    min-height: unset;
+  }
+
+  .btn-spin {
+    padding: 0.7rem 1.8rem;
+    font-size: 1.15rem;
+  }
+
+  .question-container {
+    gap: 0.6rem;
+    padding: 0.25rem 0;
+  }
+
+  .question-box {
+    padding: 0.8rem 1.2rem;
+    min-height: 70px;
+  }
+
+  .question-text {
+    font-size: 1.2rem;
+  }
+
+  .timer-section {
+    padding: 0.5rem 0.85rem;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .timer-digits {
+    font-size: 1.6rem;
+  }
+
+  .helpers-toolbar {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+  }
+
+  .btn-helper {
+    min-height: 48px;
+    padding: 0.4rem 0.3rem;
+  }
+
+  .helper-icon {
+    font-size: 1.1rem;
+  }
+
+  .helper-label {
+    font-size: 0.75rem;
+  }
+
+  .choices-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .choice-card {
+    padding: 0.6rem 0.85rem;
+  }
+
+  .choice-text {
+    font-size: 1rem;
+  }
+
+  .modal-card {
+    padding: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+

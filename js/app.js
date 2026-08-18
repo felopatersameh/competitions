@@ -23,8 +23,7 @@
 
   const DEFAULT_CAT_META = { icon: '🎯', color: '#38bdf8', dark: '#0284c7' };
 
-  // Choice letters for Arabic display
-  const CHOICE_LETTERS = ['أ', 'ب', 'ج', 'د'];
+  // Arabic choice labels (أ، ب، ج، د) are defined in HTML as .choice-letter elements
 
   // =========================================================================
   // 2. Application State
@@ -44,7 +43,8 @@
     eliminatedChoiceIndices: [],// Array of indices in currentChoiceOrder that were eliminated
     history: [],                // Array of { id, category, points, status: 'completed'|'skipped', timestamp }
     soundEnabled: true,
-    wheelAngle: 0               // Current wheel rotation angle in radians
+    wheelAngle: 0,              // Current wheel rotation angle in radians
+    answerShown: false          // True after "إظهار الإجابة" chosen — prevents timeUpModal re-show on Refresh
   };
 
   // Runtime Timer & Animation handles (not persisted)
@@ -232,6 +232,7 @@
         if (Array.isArray(parsed.history)) state.history = parsed.history;
         if (typeof parsed.soundEnabled === 'boolean') state.soundEnabled = parsed.soundEnabled;
         if (typeof parsed.wheelAngle === 'number') state.wheelAngle = parsed.wheelAngle;
+        if (typeof parsed.answerShown === 'boolean') state.answerShown = parsed.answerShown;
       }
     } catch (e) {
       console.warn('Failed to load state from localStorage:', e);
@@ -255,7 +256,8 @@
         eliminatedChoiceIndices: state.eliminatedChoiceIndices,
         history: state.history,
         soundEnabled: state.soundEnabled,
-        wheelAngle: state.wheelAngle
+        wheelAngle: state.wheelAngle,
+        answerShown: state.answerShown
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
@@ -279,6 +281,7 @@
     state.eliminatedChoiceIndices = [];
     state.history = [];
     state.wheelAngle = 0;
+    state.answerShown = false;
     saveState();
 
     closeAllModals();
@@ -407,6 +410,19 @@
     }
   }
 
+  function resizeWheelCanvas() {
+    const canvas = dom.wheelCanvas;
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+    if (size > 0 && (canvas.width !== size || canvas.height !== size)) {
+      canvas.width = size;
+      canvas.height = size;
+    }
+  }
+
   function renderWheel() {
     const canvas = dom.wheelCanvas;
     if (!canvas) return;
@@ -448,6 +464,9 @@
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
       ctx.stroke();
 
+      // Responsive scale factor based on radius (radius is ~258px on desktop, ~138px on mobile)
+      const baseScale = Math.max(0.5, Math.min(1.2, radius / 250));
+
       // Text and Icon Rendering inside slice
       ctx.save();
       const midAngle = startAngle + arcSize / 2;
@@ -456,35 +475,40 @@
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
 
-      // Scale text if many segments
-      let fontSize = numSegments > 16 ? 13 : numSegments > 10 ? 15 : 17;
+      // Scale text dynamically
+      const baseFontSize = numSegments > 16 ? 12 : numSegments > 10 ? 14 : 16;
+      const fontSize = Math.max(9, Math.round(baseFontSize * baseScale));
       ctx.font = `bold ${fontSize}px Cairo, sans-serif`;
 
       // Category + points label
       const label = seg.points > 0 ? `${meta.icon} ${seg.category} (${seg.points})` : seg.category;
-      ctx.fillText(label, radius - 24, 0);
+      const textPadding = Math.max(10, Math.round(22 * baseScale));
+      ctx.fillText(label, radius - textPadding, 0);
 
       ctx.restore();
     }
 
     // Outer decorative ring
+    const baseScale = Math.max(0.5, Math.min(1.2, radius / 250));
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-    ctx.lineWidth = 8;
+    ctx.lineWidth = Math.max(4, Math.round(8 * baseScale));
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.stroke();
 
     // Peripheral Golden Pins / Ticks
+    const pinRadius = Math.max(2, 3.5 * baseScale);
+    const pinOffset = Math.max(2, Math.round(4 * baseScale));
     for (let i = 0; i < numSegments * 2; i++) {
       const pinAngle = (i * Math.PI) / numSegments;
-      const px = Math.cos(pinAngle) * (radius - 4);
-      const py = Math.sin(pinAngle) * (radius - 4);
+      const px = Math.cos(pinAngle) * (radius - pinOffset);
+      const py = Math.sin(pinAngle) * (radius - pinOffset);
 
       ctx.beginPath();
-      ctx.arc(px, py, 3.5, 0, 2 * Math.PI);
+      ctx.arc(px, py, pinRadius, 0, 2 * Math.PI);
       ctx.fillStyle = '#fde047';
       ctx.shadowColor = 'rgba(251, 191, 36, 0.8)';
-      ctx.shadowBlur = 4;
+      ctx.shadowBlur = 4 * baseScale;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
@@ -493,6 +517,7 @@
   }
 
   function updateWheelView() {
+    resizeWheelCanvas();
     buildWheelSegments();
     renderWheel();
     updateHeaderStats();
@@ -723,7 +748,16 @@
 
     // If restored in time_up state
     if (state.questionStatus === 'time_up') {
-      handleTimeUp(false); // don't play alarm again on refresh
+      if (state.answerShown) {
+        // Answer was already revealed before refresh — re-open the answer modal directly
+        const q2 = getQuestionById(state.currentQuestionId);
+        if (q2) {
+          dom.answerContentText.textContent = q2.answer;
+          openModal(dom.answerModal, true);
+        }
+      } else {
+        handleTimeUp(false); // don't play alarm again on refresh
+      }
     }
   }
 
@@ -996,6 +1030,9 @@
     const q = getQuestionById(state.currentQuestionId);
     if (!q) return;
 
+    state.answerShown = true;
+    saveState();
+
     dom.answerContentText.textContent = q.answer;
     openModal(dom.answerModal, true);
   }
@@ -1043,6 +1080,7 @@
     state.usedAskTeacher = false;
     state.currentChoiceOrder = [];
     state.eliminatedChoiceIndices = [];
+    state.answerShown = false;
     saveState();
 
     dom.finishQuestionBtn.disabled = false;
@@ -1233,9 +1271,10 @@
       });
     });
 
-    // Window resize handler for canvas rendering
+    // Window resize handler for canvas rendering + canvas size correction
     window.addEventListener('resize', () => {
       if (dom.wheelView.classList.contains('active')) {
+        resizeWheelCanvas();
         renderWheel();
       }
     });
@@ -1359,7 +1398,10 @@
     // 3. Bind UI Events
     bindEvents();
 
-    // 4. Determine initial screen to display
+    // 4. Resize canvas to match actual displayed size (critical on mobile)
+    resizeWheelCanvas();
+
+    // 5. Determine initial screen to display
     if (state.currentQuestionId && (state.questionStatus === 'opened' || state.questionStatus === 'running' || state.questionStatus === 'paused' || state.questionStatus === 'time_up')) {
       // If timer was running before refresh, downgrade to paused per spec
       if (state.questionStatus === 'running') {
