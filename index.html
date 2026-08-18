@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anti Gravity — مسابقة العجلة التفاعلية</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Main Application Container -->
+  <div id="app" class="app-container">
+    
+    <!-- Top Header Bar -->
+    <header class="app-header">
+      <div class="header-branding">
+        <div class="logo-icon">⚡</div>
+        <h1 class="game-title">Anti Gravity <span>مسابقة التحدي</span></h1>
+      </div>
+
+      <div class="header-stats">
+        <div class="stat-badge" title="الأسئلة المتبقية">
+          <span class="stat-icon">🎯</span>
+          <span class="stat-label">المتبقي:</span>
+          <strong id="remainingCount" class="stat-value">100</strong>
+        </div>
+        <div class="stat-badge" title="الأسئلة التي تم لعبها">
+          <span class="stat-icon">🏆</span>
+          <span class="stat-label">المكتمل:</span>
+          <strong id="playedCount" class="stat-value">0</strong>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <button id="soundToggleBtn" class="icon-btn" title="كتم/تشغيل الصوت" aria-label="الصوت">
+          <span id="soundIcon" class="btn-icon">🔊</span>
+        </button>
+        <button id="historyBtn" class="icon-btn" title="سجل الأسئلة" aria-label="السجل">
+          <span class="btn-icon">📜</span>
+        </button>
+        <button id="settingsBtn" class="icon-btn" title="الإعدادات" aria-label="الإعدادات">
+          <span class="btn-icon">⚙️</span>
+        </button>
+        <button id="fullscreenBtn" class="icon-btn primary-icon-btn" title="ملء الشاشة" aria-label="ملء الشاشة">
+          <span id="fullscreenIcon" class="btn-icon">⛶</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Error Banner (if validation fails) -->
+    <div id="errorBanner" class="error-banner hidden" role="alert">
+      <div class="error-icon">⚠️</div>
+      <div class="error-text">يوجد خطأ في بيانات الأسئلة. يُرجى مراجعة وحدة التحكم (Console).</div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-stage">
+      
+      <!-- ================= 1) WHEEL VIEW ================= -->
+      <section id="wheelView" class="view-panel active">
+        <div class="wheel-view-layout">
+          
+          <div class="wheel-wrapper">
+            <div class="wheel-pointer" id="wheelPointer"></div>
+            <div class="wheel-canvas-container">
+              <canvas id="wheelCanvas" width="600" height="600"></canvas>
+              <div class="wheel-center-cap">
+                <div class="center-gem"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wheel-actions-pane">
+            <button id="spinBtn" class="btn btn-spin" type="button">
+              <span class="btn-spin-glow"></span>
+              <span class="btn-spin-content">
+                <span class="spin-icon">🎡</span>
+                <span class="spin-text">لف العجلة</span>
+              </span>
+            </button>
+
+            <!-- Card shown when a question is selected after spin -->
+            <div id="selectedCard" class="selected-card hidden">
+              <div class="card-glow"></div>
+              <div class="selected-meta">
+                <div class="category-pill" id="selectedCategoryPill">
+                  <span id="selectedCategoryIcon" class="pill-icon">🌍</span>
+                  <span id="selectedCategoryText">جغرافيا</span>
+                </div>
+                <div class="points-pill" id="selectedPointsPill">
+                  <span id="selectedPointsText">15</span>
+                  <span class="points-unit">نقطة</span>
+                </div>
+              </div>
+
+              <div class="selected-actions">
+                <button id="openQuestionBtn" class="btn btn-open" type="button">
+                  <span class="btn-icon">📖</span>
+                  <span>فتح السؤال</span>
+                </button>
+                <button id="cancelRespinBtn" class="btn btn-cancel-spin" type="button">
+                  <span class="btn-icon">↩️</span>
+                  <span>إلغاء وإعادة اللف</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card shown when all 100 questions are exhausted -->
+            <div id="allFinishedCard" class="finished-card hidden">
+              <div class="finished-icon">🎉</div>
+              <h2 class="finished-title">انتهت جميع أسئلة المسابقة!</h2>
+              <p class="finished-subtitle">تم لعب جميع الأسئلة الـ 100 بنجاح.</p>
+              <div class="finished-actions">
+                <button id="finishedHistoryBtn" class="btn btn-secondary">
+                  <span>📜 عرض السجل</span>
+                </button>
+                <button id="finishedResetBtn" class="btn btn-outline-danger">
+                  <span>🔄 إعادة ضبط المسابقة</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= 2) QUESTION VIEW ================= -->
+      <section id="questionView" class="view-panel hidden">
+        <div class="question-container">
+          
+          <!-- Top Meta Bar -->
+          <div class="question-header">
+            <div class="question-category-badge" id="qCategoryBadge">
+              <span id="qCategoryIcon" class="badge-icon">⚽</span>
+              <span id="qCategoryName">كرة قدم</span>
+            </div>
+            <div class="question-points-badge" id="qPointsBadge">
+              <span id="qPointsValue">10</span>
+              <span class="points-suffix">نقاط</span>
+            </div>
+          </div>
+
+          <!-- Question Body -->
+          <div class="question-box">
+            <h2 id="qText" class="question-text">نص السؤال هنا...</h2>
+          </div>
+
+          <!-- Timer Bar -->
+          <div class="timer-section">
+            <div class="timer-display-wrapper">
+              <div id="timerDigits" class="timer-digits">00:25</div>
+              <div class="timer-progress-track">
+                <div id="timerProgressBar" class="timer-progress-bar"></div>
+              </div>
+            </div>
+            <div class="timer-controls">
+              <button id="timerControlBtn" class="btn btn-timer" type="button">
+                <span id="timerControlIcon" class="btn-icon">▶</span>
+                <span id="timerControlText">ابدأ الوقت</span>
+                <span class="key-hint">Space</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Reveal Area (Hint + Choices) -->
+          <div class="reveal-section">
+            <!-- Hint Box -->
+            <div id="hintBox" class="hint-box hidden">
+              <div class="hint-header">
+                <span class="hint-icon">💡</span>
+                <span class="hint-title">التلميح:</span>
+              </div>
+              <p id="hintText" class="hint-content"></p>
+            </div>
+
+            <!-- Choices Grid -->
+            <div id="choicesGrid" class="choices-grid hidden">
+              <div class="choice-card" id="choiceCard0" data-index="0">
+                <span class="choice-letter">أ</span>
+                <span class="choice-text" id="choiceText0"></span>
+              </div>
+              <div class="choice-card" id="choiceCard1" data-index="1">
+                <span class="choice-letter">ب</span>
+                <span class="choice-text" id="choiceText1"></span>
+              </div>
+              <div class="choice-card" id="choiceCard2" data-index="2">
+                <span class="choice-letter">ج</span>
+                <span class="choice-text" id="choiceText2"></span>
+              </div>
+              <div class="choice-card" id="choiceCard3" data-index="3">
+                <span class="choice-letter">د</span>
+                <span class="choice-text" id="choiceText3"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Helper Tools Toolbar -->
+          <div class="helpers-toolbar">
+            <button id="helpHintBtn" class="btn btn-helper" type="button" title="إظهار تلميح (H)">
+              <span class="helper-icon">💡</span>
+              <span class="helper-label">تلميح</span>
+              <span class="helper-key">H</span>
+            </button>
+            <button id="helpChoicesBtn" class="btn btn-helper" type="button" title="عرض 4 اختيارات (C)">
+              <span class="helper-icon">🔤</span>
+              <span class="helper-label">اختيارات</span>
+              <span class="helper-key">C</span>
+            </button>
+            <button id="helpEliminateBtn" class="btn btn-helper" type="button" disabled title="حذف إجابتين خاطئتين (E)">
+              <span class="helper-icon">✂️</span>
+              <span class="helper-label">حذف إجابتين</span>
+              <span class="helper-key">E</span>
+            </button>
+            <button id="helpTeacherBtn" class="btn btn-helper" type="button" title="اسأل أستاذ (T)">
+              <span class="helper-icon">👨‍🏫</span>
+              <span class="helper-label">اسأل أستاذ</span>
+              <span class="helper-key">T</span>
+            </button>
+          </div>
+
+          <!-- Bottom Finish Action -->
+          <div class="question-footer">
+            <button id="finishQuestionBtn" class="btn btn-finish" type="button">
+              <span class="btn-icon">🏁</span>
+              <span>إنهاء السؤال</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ================= MODALS LAYER ================= -->
+
+    <!-- 1) Finish Confirmation Modal -->
+    <div id="finishConfirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <div class="modal-icon-header warning">🏁</div>
+        <h3 class="modal-title">إنهاء السؤال</h3>
+        <p class="modal-desc">هل تريد إنهاء السؤال والعودة للعجلة؟</p>
+        <div class="modal-actions">
+          <button id="confirmFinishBtn" class="btn btn-success" type="button">
+            <span>نعم، إنهاء السؤال</span>
+          </button>
+          <button id="cancelFinishBtn" class="btn btn-secondary" type="button">
+            <span>إلغاء</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) Time Up Mandatory Modal -->
+    <div id="timeUpModal" class="modal-overlay mandatory hidden" role="dialog" aria-modal="true">
+      <div class="modal-card modal-urgent">
+        <div class="modal-icon-header urgent">⏰</div>
+        <h3 class="modal-title urgent-title">انتهى الوقت!</h3>
+        <p class="modal-desc">يجب اختيار أحد الإجراءين التاليين للمتابعة:</p>
+        <div class="modal-actions vertical-actions">
+          <button id="revealAnswerBtn" class="btn btn-reveal" type="button">
+            <span class="btn-icon">👁</span>
+            <span>إظهار الإجابة</span>
+          </button>
+          <button id="skipQuestionBtn" class="btn btn-skip" type="button">
+            <span class="btn-icon">⏭</span>
+            <span>تخطي السؤال</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) Revealed Answer Modal -->
+    <div id="answerModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-card modal-answer">
+        <div class="modal-icon-header success">✨</div>
+        <h3 class="modal-title">الإجابة الصحيحة</h3>
+        <div class="answer-box">
+          <p id="answerContentText" class="answer-text">الإجابة</p>
+        </div>
+        <div class="modal-actions">
+          <button id="returnToWheelBtn" class="btn btn-primary btn-large" type="button">
+            <span class="btn-icon">🎡</span>
+            <span>العودة للعجلة</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) Ask Teacher Helper Modal -->
+    <div id="teacherModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <div class="modal-icon-header teacher">👨‍🏫</div>
+        <h3 class="modal-title">مساعدة: اسأل أستاذ</h3>
+        <p class="modal-desc">تم تفعيل وسيلة المساعدة «اسأل أستاذ» بنجاح.</p>
+        <div class="modal-actions">
+          <button id="closeTeacherBtn" class="btn btn-primary" type="button">
+            <span>تم</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5) History Modal -->
+    <div id="historyModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-card modal-history">
+        <div class="modal-header-row">
+          <h3 class="modal-title">📜 سجل الأسئلة الملعوبة</h3>
+          <button id="closeHistoryBtn" class="modal-close-icon" aria-label="إغلاق">&times;</button>
+        </div>
+        <div class="history-content">
+          <div id="historyEmpty" class="history-empty">لم يتم لعب أي سؤال بعد.</div>
+          <ul id="historyList" class="history-list"></ul>
+        </div>
+        <div class="modal-actions">
+          <button id="closeHistoryBottomBtn" class="btn btn-secondary" type="button">
+            <span>إغلاق</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6) Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-card modal-settings">
+        <div class="modal-header-row">
+          <h3 class="modal-title">⚙️ إعدادات المسابقة</h3>
+          <button id="closeSettingsBtn" class="modal-close-icon" aria-label="إغلاق">&times;</button>
+        </div>
+        
+        <div class="settings-content">
+          <div class="setting-item">
+            <div class="setting-info">
+              <strong class="setting-label">المؤثرات الصوتية</strong>
+              <span class="setting-desc">أصوات الدوران، العد التنازلي، التنبيهات</span>
+            </div>
+            <button id="settingsSoundToggle" class="btn btn-toggle" type="button">
+              <span id="settingsSoundState">مفعل 🔊</span>
+            </button>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <strong class="setting-label">ملء الشاشة (Projector Mode)</strong>
+              <span class="setting-desc">تكبير الواجهة لتناسب شاشات العرض</span>
+            </div>
+            <button id="settingsFullscreenBtn" class="btn btn-secondary" type="button">
+              <span>⛶ تفعيل ملء الشاشة</span>
+            </button>
+          </div>
+
+          <div class="shortcuts-section">
+            <h4 class="shortcuts-title">⌨️ اختصارات لوحة المفاتيح</h4>
+            <div class="shortcuts-table">
+              <div class="shortcut-row"><kbd>Space</kbd> <span>بدء / إيقاف مؤقت / استكمال الوقت</span></div>
+              <div class="shortcut-row"><kbd>H</kbd> <span>إظهار التلميح</span></div>
+              <div class="shortcut-row"><kbd>C</kbd> <span>عرض الاختيارات</span></div>
+              <div class="shortcut-row"><kbd>E</kbd> <span>حذف إجابتين</span></div>
+              <div class="shortcut-row"><kbd>T</kbd> <span>اسأل أستاذ</span></div>
+              <div class="shortcut-row"><kbd>F</kbd> <span>ملء الشاشة</span></div>
+            </div>
+          </div>
+
+          <div class="danger-zone">
+            <button id="resetCompetitionBtn" class="btn btn-danger-full" type="button">
+              <span>🔄 إعادة ضبط المسابقة بالكامل</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="closeSettingsBottomBtn" class="btn btn-secondary" type="button">
+            <span>إغلاق</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7) Reset Confirmation Modal -->
+    <div id="resetConfirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-card modal-danger">
+        <div class="modal-icon-header danger">⚠️</div>
+        <h3 class="modal-title">هل أنت متأكد؟</h3>
+        <p class="modal-desc">سيتم حذف تقدم المسابقة بالكامل، ومسح السجل، وإعادة إتاحة جميع الـ 100 سؤال.</p>
+        <div class="modal-actions">
+          <button id="confirmResetBtn" class="btn btn-danger" type="button">
+            <span>نعم، إعادة الضبط</span>
+          </button>
+          <button id="cancelResetBtn" class="btn btn-secondary" type="button">
+            <span>إلغاء</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/questions.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
